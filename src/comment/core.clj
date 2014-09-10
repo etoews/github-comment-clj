@@ -1,25 +1,21 @@
 (ns comment.core
   (:gen-class)
   (:use [clojure.pprint :only (pprint)])
+  (:use [environ.core :only (env)])
   (:require
-    [clojure.edn :as edn]
     [tentacles.repos :as repos]
     [tentacles.issues :as issues]))
 
-(defn load-github-config
-  "Load and return your GitHub configuration.
-   Copy github.edn.template to github.edn and edit."
-  ([] (load-github-config "resources/github.edn"))
-  ([filename]
-  (try
-    (edn/read-string (slurp filename))
-    (catch java.io.FileNotFoundException e
-      (throw (java.io.FileNotFoundException.
-              (str (.getMessage e) " Copy github.edn.template to github.edn and edit.")))))))
-
 (defn -main
-  "I don't do a whole lot ... yet."
+  "Small app to comment on a GitHub pull request with Clojure.
+  Usage: github-comment-clj USERNAME REPO PR_NUMBER COMMENT
+  Example: github-comment-clj everett-toews blobstore-save-clj 87 \"Thanks for the PR. We tweeted about it!\""
   [& args]
-  (def github-config (load-github-config))
-  (def github-creds {:oauth-token (:oauth-token github-config)})
-  (issues/create-comment (:username github-config) "pr-to-tweet" 6 "Commenting with #clojure from tentacles" github-creds))
+  ;; Normally we would use clojure.tools.cli to parse-opts but
+  ;; that's overkill for this example
+  (def username (nth args 0))
+  (def repo (nth args 1))
+  (def pr-num (nth args 2))
+  (def comment (nth args 3))
+  (def github-creds {:oauth-token (env :github-oauth-token)})
+  (issues/create-comment username repo pr-num comment github-creds))
